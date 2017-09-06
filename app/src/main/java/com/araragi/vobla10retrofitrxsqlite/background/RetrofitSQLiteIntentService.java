@@ -33,8 +33,8 @@ public class RetrofitSQLiteIntentService extends IntentService {
 
         Log.i("intent", "----intent service has started----");
 
-        Dao dao = new Dao(this);
-        dao.open();
+//        Dao dao = new Dao(this);
+//        dao.open();
 
 
         //String extras = intent.getStringExtra()
@@ -48,19 +48,29 @@ public class RetrofitSQLiteIntentService extends IntentService {
             flights = call.execute().body();
         }catch (Exception e){
             e.printStackTrace();
-            EventBus.getDefault().post(new DbUpdatedEvent("No internet"));
+            EventBus.getDefault().post(new DbUpdatedEvent(DbUpdatedEvent.NO_INTERNET));
 
         }
-        for(Flight flight:flights){
+        try {
 
-            dao.insertFlightIfNotExist(flight);
-            Log.i("service", "----- From inet: " + flight.toString());
+            Dao dao = new Dao(this);
+            dao.open();
+           // dao.
+            for (Flight flight : flights) {
+
+
+                dao.insertFlightIfNotExist(flight);
+                Log.i("service", "----- From inet: " + flight.toString());
+
+            }
+            dao.close();
+            EventBus.getDefault().post(new DbUpdatedEvent(DbUpdatedEvent.DB_UPDATED));
+
+        }catch (Exception e){
+            e.printStackTrace();
+            EventBus.getDefault().post(new DbUpdatedEvent(DbUpdatedEvent.DB_EXCEPTION));
 
         }
-        EventBus.getDefault().post(new DbUpdatedEvent("db updated"));
-
-
-
 
     }
 }

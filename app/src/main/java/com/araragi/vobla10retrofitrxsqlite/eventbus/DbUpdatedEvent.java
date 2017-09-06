@@ -6,6 +6,11 @@ package com.araragi.vobla10retrofitrxsqlite.eventbus;
 
 public class DbUpdatedEvent {
 
+    public static final String DB_UPDATED = "db updated";
+    public static final String NO_INTERNET = "no internet";
+    public static final String DB_EXCEPTION = "db exception";
+
+
     public final String resultOfDbUpdate;
 
     public DbUpdatedEvent(String message){

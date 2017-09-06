@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
         mLinearLayoutManager = new LinearLayoutManager(this);
         mLinearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
 
@@ -67,23 +68,28 @@ public class MainActivity extends AppCompatActivity {
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void onDbUpdatedEvent(DbUpdatedEvent resultStatus){
-        String s = resultStatus.resultOfDbUpdate;
-        LinkedList<Flight> localListFlights = dao.getAllFlightsNotDeleted();
-        for(Flight flight: localListFlights){
 
-            if(flightsDataSet.contains(flight)) {
-                flightsDataSet.addLast(flight);
-                int size = flightsDataSet.size();
-                recyclerViewFlightAdapter.notifyItemInserted(size - 1);
-                Log.i("Main", "---Notify item inserted :" +  flight.toString() + "---");
-            }
-            else{
-                Log.i("Main", "---Element is already in dataset :" +  flight.toString() + "---");
-            }
+        String status = resultStatus.resultOfDbUpdate;
 
+        if(status.equals("db updated")){
+
+            LinkedList<Flight> localListFlights = dao.getAllFlightsNotDeleted();
+            for(Flight flight: localListFlights) {
+
+                if (!flightsDataSet.contains(flight)) {
+                    flightsDataSet.addLast(flight);
+                    //if the size is 0 and nothing was added??
+                    int size = flightsDataSet.size();
+                    recyclerViewFlightAdapter.notifyItemInserted(size - 1);
+                    Log.i("Main", "---Notify item inserted :" + flight.toString() + "---");
+                } else {
+                    Log.i("Main", "---Element is already in dataset :" + flight.toString() + "---");
+                }
+            }
+            Toast.makeText(this, "Database updated", Toast.LENGTH_LONG).show();
         }
 
-        Toast.makeText(this, s, Toast.LENGTH_LONG).show();
+
     }
 
 
@@ -92,11 +98,11 @@ public class MainActivity extends AppCompatActivity {
     protected void onDestroy(){
         super.onDestroy();
         EventBus.getDefault().unregister(this);
+        recyclerView.setAdapter(null);
+        dao.close();
     }
 
     private void setUpRecyclerView() {
-
-        Log.i("main", "------------------dataset size = " + flightsDataSet.size());
 
         recyclerViewFlightAdapter = new RecyclerViewFlightAdapter(flightsDataSet, R.id.row_model);
         recyclerView.setAdapter(recyclerViewFlightAdapter);
