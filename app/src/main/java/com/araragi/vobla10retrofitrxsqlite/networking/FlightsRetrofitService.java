@@ -48,9 +48,9 @@ public class FlightsRetrofitService implements Callback<List<Flight>> {
         Gson gson = gsonBuilder.create();
 
         OkHttpClient client = new OkHttpClient.Builder()
-                //.connectTimeout(1, TimeUnit.SECONDS)
-                //.writeTimeout(1, TimeUnit.SECONDS)
-                //.readTimeout(30, TimeUnit.SECONDS)
+//                .connectTimeout(5, TimeUnit.SECONDS)
+//                .writeTimeout(5, TimeUnit.SECONDS)
+//                .readTimeout(5, TimeUnit.SECONDS)
                 .build();
 
         Retrofit retrofit = new Retrofit.Builder()

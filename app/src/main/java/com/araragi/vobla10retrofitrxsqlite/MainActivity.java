@@ -1,9 +1,11 @@
 package com.araragi.vobla10retrofitrxsqlite;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.DividerItemDecoration;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.helper.ItemTouchHelper;
@@ -14,6 +16,7 @@ import com.araragi.vobla10retrofitrxsqlite.adapter.RecyclerViewFlightAdapter;
 import com.araragi.vobla10retrofitrxsqlite.background.RetrofitSQLiteIntentService;
 import com.araragi.vobla10retrofitrxsqlite.database.Dao;
 import com.araragi.vobla10retrofitrxsqlite.eventbus.DbUpdatedEvent;
+import com.araragi.vobla10retrofitrxsqlite.eventbus.TicketClickEvent;
 import com.araragi.vobla10retrofitrxsqlite.model.Flight;
 import com.araragi.vobla10retrofitrxsqlite.networking.FlightsRetrofitApi;
 import com.araragi.vobla10retrofitrxsqlite.networking.FlightsRetrofitService;
@@ -42,20 +45,14 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        mLinearLayoutManager = new LinearLayoutManager(this);
-        mLinearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+
 
         recyclerView = (RecyclerView)findViewById(R.id.recycler_container);
 
         EventBus.getDefault().register(this);
 
-
-        Flight barselona = new Flight("hhhggg","2016-01-02","2016-01-05","Windsor", "Barselona", "url/picture",76.08, "url/gjbkgj");
-
-
         dao = new Dao(this);
         dao.open();
-        //dao.deleteAll();
 
         flightsDataSet = dao.getAllFlightsNotDeleted();
 
@@ -71,25 +68,43 @@ public class MainActivity extends AppCompatActivity {
 
         String status = resultStatus.resultOfDbUpdate;
 
-        if(status.equals("db updated")){
+        switch(status) {
+            case DbUpdatedEvent.DB_UPDATED:
 
-            LinkedList<Flight> localListFlights = dao.getAllFlightsNotDeleted();
-            for(Flight flight: localListFlights) {
+                LinkedList<Flight> localListFlights = dao.getAllFlightsNotDeleted();
+                for (Flight flight : localListFlights) {
 
-                if (!flightsDataSet.contains(flight)) {
-                    flightsDataSet.addLast(flight);
-                    //if the size is 0 and nothing was added??
-                    int size = flightsDataSet.size();
-                    recyclerViewFlightAdapter.notifyItemInserted(size - 1);
-                    Log.i("Main", "---Notify item inserted :" + flight.toString() + "---");
-                } else {
-                    Log.i("Main", "---Element is already in dataset :" + flight.toString() + "---");
+                    if (flightsDataSet.contains(flight)) {
+                        flightsDataSet.addLast(flight);
+                        int size = flightsDataSet.size();
+                        recyclerViewFlightAdapter.notifyItemInserted(size - 1);
+                        Log.i("Main", "---Notify item inserted :" + flight.toString() + "---");
+                    } else {
+                        Log.i("Main", "---Element is already in dataset :" + flight.toString() + "---");
+                    }
                 }
-            }
-            Toast.makeText(this, "Database updated", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "Database updated", Toast.LENGTH_LONG).show();
+                break;
+            case DbUpdatedEvent.NO_INTERNET:
+                Toast.makeText(this, "No internet connection", Toast.LENGTH_LONG).show();
+                break;
+            case DbUpdatedEvent.DB_EXCEPTION:
+                Toast.makeText(this, "Database error", Toast.LENGTH_LONG).show();
+                break;
+
         }
 
+    }
+    @Subscribe
+    public void onTicketClicked(TicketClickEvent position){
 
+        int positionInt = Integer.parseInt(position.positionCliked);
+        Flight flight = flightsDataSet.get(positionInt);
+        String ticketUrl = flight.getTicketServiceUrl();
+        Log.i("main", "----- Ticket URL: " + ticketUrl);
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setData(Uri.parse("http://stockreleaser.com" + ticketUrl));
+        startActivity(intent);
     }
 
 
@@ -104,13 +119,14 @@ public class MainActivity extends AppCompatActivity {
 
     private void setUpRecyclerView() {
 
+        mLinearLayoutManager = new LinearLayoutManager(this);
+        mLinearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+
         recyclerViewFlightAdapter = new RecyclerViewFlightAdapter(flightsDataSet, R.id.row_model);
         recyclerView.setAdapter(recyclerViewFlightAdapter);
         recyclerView.setLayoutManager(mLinearLayoutManager);
         recyclerView.setHasFixedSize(false);
         recyclerView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
-
-        Log.i("main", "------------------dataset size = " + flightsDataSet.size());
 
         TouchHelperCallback touchHelperCallback = new TouchHelperCallback();
         ItemTouchHelper touchHelper = new ItemTouchHelper(touchHelperCallback);

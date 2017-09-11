@@ -37,6 +37,16 @@ public class Dao {
         dbHelper.close();
     }
 
+    public void beginTransactionDb(){
+        database.beginTransaction();
+    }
+    public void setTransactionSuccessfulDb(){
+        database.setTransactionSuccessful();
+    }
+    public void endTransactionDb(){
+        database.endTransaction();
+    }
+
 
 
     public Flight getFlight(String uuid){

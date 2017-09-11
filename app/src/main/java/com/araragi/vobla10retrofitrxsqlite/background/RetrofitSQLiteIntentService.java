@@ -33,8 +33,6 @@ public class RetrofitSQLiteIntentService extends IntentService {
 
         Log.i("intent", "----intent service has started----");
 
-//        Dao dao = new Dao(this);
-//        dao.open();
 
 
         //String extras = intent.getStringExtra()
@@ -44,31 +42,38 @@ public class RetrofitSQLiteIntentService extends IntentService {
         Retrofit retrofit = FlightsRetrofitService.getInstance().getService();
         FlightsRetrofitApi apiService = retrofit.create(FlightsRetrofitApi.class);
         Call<List<Flight>> call = apiService.getFlights();
+
         try {
             flights = call.execute().body();
+            Log.i("intentservice", "---- Call executed----");
         }catch (Exception e){
             e.printStackTrace();
+            Log.i("intentservice", "---- Call failed----");
             EventBus.getDefault().post(new DbUpdatedEvent(DbUpdatedEvent.NO_INTERNET));
 
         }
+        Dao dao = new Dao(this);
+        dao.open();
+        dao.beginTransactionDb();
         try {
 
-            Dao dao = new Dao(this);
-            dao.open();
-           // dao.
             for (Flight flight : flights) {
 
-
                 dao.insertFlightIfNotExist(flight);
-                Log.i("service", "----- From inet: " + flight.toString());
+                Log.i("service", "----- From server: " + flight.toString());
 
             }
-            dao.close();
+
+            dao.setTransactionSuccessfulDb();
             EventBus.getDefault().post(new DbUpdatedEvent(DbUpdatedEvent.DB_UPDATED));
 
         }catch (Exception e){
+
             e.printStackTrace();
             EventBus.getDefault().post(new DbUpdatedEvent(DbUpdatedEvent.DB_EXCEPTION));
+
+        }finally {
+            dao.endTransactionDb();
 
         }
 
