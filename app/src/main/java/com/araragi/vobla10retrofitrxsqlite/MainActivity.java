@@ -56,8 +56,8 @@ public class MainActivity extends AppCompatActivity {
 
         flightsDataSet = dao.getAllFlightsNotDeleted();
 
-        Intent intent = new Intent(this, RetrofitSQLiteIntentService.class);
-        startService(intent);
+//        Intent intent = new Intent(this, RetrofitSQLiteIntentService.class);
+//        startService(intent);
         setUpRecyclerView();
 
 
